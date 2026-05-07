@@ -14,17 +14,25 @@ class ViewController: NSViewController {
     @IBOutlet var appNameLabel: NSTextField!
 
     private var safariExtensionIdentifier: String? {
-        guard
-            let pluginsURL = Bundle.main.builtInPlugInsURL,
-            let extensionBundleURL = try? FileManager.default
-                .contentsOfDirectory(at: pluginsURL, includingPropertiesForKeys: nil)
-                .first(where: { $0.pathExtension == "appex" }),
-            let extensionBundle = Bundle(url: extensionBundleURL)
+        guard let pluginsURL = Bundle.main.builtInPlugInsURL,
+              let pluginURLs = try? FileManager.default.contentsOfDirectory(at: pluginsURL, includingPropertiesForKeys: nil)
         else {
             return nil
         }
 
-        return extensionBundle.bundleIdentifier
+        for pluginURL in pluginURLs where pluginURL.pathExtension == "appex" {
+            guard let extensionBundle = Bundle(url: pluginURL),
+                  let extensionDictionary = extensionBundle.infoDictionary?["NSExtension"] as? [String: Any],
+                  let extensionPointIdentifier = extensionDictionary["NSExtensionPointIdentifier"] as? String,
+                  extensionPointIdentifier == "com.apple.Safari.extension"
+            else {
+                continue
+            }
+
+            return extensionBundle.bundleIdentifier
+        }
+
+        return nil
     }
 
     override func viewDidLoad() {
