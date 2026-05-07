@@ -12,17 +12,35 @@ import SafariServices.SFSafariApplication
 class ViewController: NSViewController {
 
     @IBOutlet var appNameLabel: NSTextField!
-    
+
+    private var safariExtensionIdentifier: String? {
+        guard
+            let pluginsURL = Bundle.main.builtInPlugInsURL,
+            let extensionBundleURL = try? FileManager.default
+                .contentsOfDirectory(at: pluginsURL, includingPropertiesForKeys: nil)
+                .first(where: { $0.pathExtension == "appex" }),
+            let extensionBundle = Bundle(url: extensionBundleURL)
+        else {
+            return nil
+        }
+
+        return extensionBundle.bundleIdentifier
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.appNameLabel.stringValue = "uBlock Origin";
+        self.appNameLabel.stringValue = "uBlock Origin"
     }
-    
-    @IBAction func openSafariExtensionPreferences(_ sender: AnyObject?) {
-        SFSafariApplication.showPreferencesForExtension(withIdentifier: "com.jasperswallen.uBlock-Origin-Extension") { error in
-            if let _ = error {
-                // Insert code to inform the user that something went wrong.
 
+    @IBAction func openSafariExtensionPreferences(_ sender: AnyObject?) {
+        guard let extensionIdentifier = self.safariExtensionIdentifier else {
+            NSLog("Unable to locate Safari extension bundle identifier")
+            return
+        }
+
+        SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionIdentifier) { error in
+            if let error = error {
+                NSLog("Unable to open Safari extension preferences: \(error.localizedDescription)")
             }
         }
     }
